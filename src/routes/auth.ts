@@ -1,5 +1,5 @@
 import express from "express";
-import { createUser } from "../handlers/user";
+import { createUser, loginUser } from "../handlers/user";
 import { body } from "express-validator";
 import { handleInputErrors } from "../util/middleware";
 
@@ -14,4 +14,12 @@ router.post(
   createUser
 );
 
-export default router;
+router.post(
+  "/login",
+  body("username").isString(),
+  body("password").isString(),
+  handleInputErrors,
+  loginUser
+);
+
+export { router };
