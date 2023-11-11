@@ -1,8 +1,20 @@
 import prisma from "../util/db";
+import express from "express";
 import { Request, Response } from "express";
-import { hashPassword, comparePassword, createJWT } from "../util/auth";
+import { hashPassword, comparePassword } from "../util/auth";
+import { Session, SessionData } from "express-session";
 
-const createUser = async (req: Request, res: Response) => {
+interface AuthenticatedRequest extends express.Request {
+  session: Session &
+    Partial<SessionData> & {
+      user?: {
+        username: string;
+        id: string;
+      };
+    };
+}
+
+const createUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const hashedPassword = await hashPassword(req.body.password);
     const newUser = await prisma.user.create({
@@ -12,14 +24,17 @@ const createUser = async (req: Request, res: Response) => {
         password: hashedPassword,
       },
     });
-    const token = createJWT(newUser.username);
-    res.json({ token });
+    req.session.user = {
+      username: newUser.username,
+      id: newUser.id,
+    };
+    res.json({ message: "User created" });
   } catch (error) {
     res.status(400).json({ error });
   }
 };
 
-const loginUser = async (req: Request, res: Response) => {
+const loginUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: {
@@ -39,13 +54,34 @@ const loginUser = async (req: Request, res: Response) => {
     if (!validPassword) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
-
-    const token = createJWT(user.username);
-    res.json({ token });
+    req.session.user = {
+      username: user.username,
+      id: user.id,
+    };
+    res.json({ message: "User logged in" });
   } catch (err) {
-    console.log(err);
     res.json({ err });
   }
 };
 
-export { createUser, loginUser };
+const authenticateUser = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (req.session.user) {
+      const user = await prisma.user.findUnique({
+        where: {
+          username: req.session.user.username,
+        },
+      });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ message: "User authenticated" });
+    } else {
+      res.status(401).json({ message: "Unauthorized" });
+    }
+  } catch (err) {
+    res.json({ err });
+  }
+};
+
+export { createUser, loginUser, authenticateUser };

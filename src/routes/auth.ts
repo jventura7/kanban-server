@@ -1,12 +1,12 @@
 import express from "express";
-import { createUser, loginUser } from "../handlers/user";
+import { createUser, loginUser, authenticateUser } from "../handlers/user";
 import { body } from "express-validator";
 import { handleInputErrors } from "../util/middleware";
 
 const router = express.Router();
 
 router.post(
-  "/user",
+  "/register",
   body("username").isString(),
   body("email").isEmail(),
   body("password").isString(),
@@ -21,5 +21,7 @@ router.post(
   handleInputErrors,
   loginUser
 );
+
+router.get("/user", authenticateUser);
 
 export { router };
