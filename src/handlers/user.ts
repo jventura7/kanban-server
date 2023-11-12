@@ -75,7 +75,10 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response) => {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json({ message: "User authenticated" });
+      res.json({
+        username: user.username,
+        id: user.id,
+      });
     } else {
       res.status(401).json({ message: "Unauthorized" });
     }
@@ -84,4 +87,15 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export { createUser, loginUser, authenticateUser };
+const logoutUser = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    req.session.destroy(() => {
+      res.clearCookie("sid");
+      res.json({ message: "User logged out" });
+    });
+  } catch (err) {
+    res.json({ err });
+  }
+};
+
+export { createUser, loginUser, authenticateUser, logoutUser };

@@ -15,5 +15,40 @@ model User {
   createdAt DateTime @default(now())
   email     String   @unique
   username  String   @unique
-  password  String 
+  password  String
+  boards    Board[]
+}
+
+model Board {
+  id              String    @id @default(uuid())
+  name            String    
+  belongsToUserId String
+  belongsToUser   User      @relation(fields: [belongsToUserId], references: [id])
+  columns         Columns[] 
+}
+
+model Columns {
+  id               String @id @default(uuid())
+  name             String 
+  belongsToBoardId String
+  belondsToBoard   Board  @relation(fields: [belongsToBoardId], references: [id])
+  tasks            Task[]
+}
+
+model Task {
+  id                String    @id @default(uuid())
+  title             String
+  description       String
+  status            String
+  belongsToColumnId String
+  belongsToColumn   Columns   @relation(fields: [belongsToColumnId], references: [id])
+  subtasks          Subtask[]
+}
+
+model Subtask {
+  id              String  @id @default(uuid())
+  title           String
+  isCompleted     Boolean
+  belondsToTaskId String
+  belongsToTask   Task    @relation(fields: [belondsToTaskId], references: [id])
 }
